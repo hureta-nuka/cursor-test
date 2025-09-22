@@ -1,0 +1,41 @@
+name: auto-review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+
+jobs:
+  auto-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: auto review PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { owner, repo } = context.repo;
+
+            const body = [
+            '自動レビューコメント',
+            `- PR: ${pr.html_url}`,
+            `- タイトル: ${pr.title}`,
+            `- 作成者: @${context.actor}`,
+            `- ラベル: ${pr.labels.map(label => label.name).join(', ')}`,
+            `- コメント: ${pr.body}`,
+            '✅ チェック観点: セキュリティ / テスト / ドキュメント / 監視',
+            ].join('\n');
+
+            await github.pulls.createReview({
+              owner,
+              repo,
+              pull_number: pr.number,
+              event: 'COMMENT',
+              body,
+            });
